@@ -106,10 +106,3 @@ func (s *SlackListener) handleMessageEvent(ev *slack.MessageEvent) error {
 	}
 	return nil
 }
-
-func areWeHappy(change float64) string {
-	if change < 0 {
-		return "warning"
-	}
-	return "good"
-}

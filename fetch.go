@@ -88,9 +88,3 @@ func (s *SlackListener) postUpdate(coinList []cmc.Coin) error {
 	}
 	return nil
 }
-
-// Take a unix timestamp and the required format and wrap it.
-// <!date^unix_epoch_timestamp^string_containing_date_tokens^optional_link|fallback_text>
-func slackTime(timeStamp int64, slackFormat string) string {
-	return fmt.Sprintf("<!date^%d^%v|generated at %d>", timeStamp, slackFormat, timeStamp)
-}
