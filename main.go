@@ -7,12 +7,6 @@ import (
 	"github.com/nlopes/slack"
 )
 
-type BotConfig struct {
-	BotToken  string `required:"true"`
-	ChannelID string `required:"true"`
-	BotID     string `required:"true"`
-}
-
 func main() {
 	var c BotConfig
 

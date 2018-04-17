@@ -7,6 +7,51 @@ import (
 	"time"
 )
 
+// Fetch data for a particular ticker from CMC
+// Avoid invoking this directly as this pings the endpoint directly.
+func fetchCMCTicker(ticker string) (cmc.Coin, error) {
+	// Fetch coin data from CMC
+	coinInfo, err := cmc.GetCoinData(ticker)
+	if err != nil {
+		fmt.Errorf("coin data retrieval failed: %v", err)
+	}
+	return coinInfo, err
+}
+
+// Ticker getter with caching wrapper (not less than 10 per minute)
+func getTicker(ticker string) (cmc.Coin, error) {
+	t := time.Now()
+
+	// Do we even have the coin?
+	if coinInfo, ok := Storage.Coins[ticker]; ok {
+
+		// We have the coin, and it is not stale.
+		if !tickerStale(Storage.LastUpdates[ticker], 6) {
+			coinInfo = Storage.Coins[ticker]
+		} else {
+			// Stale coin, update storage.
+			if coinInfo, err := fetchCMCTicker(ticker); err != nil {
+				fmt.Errorf("ticker failed to refresh: %v", err)
+			} else {
+				Storage.Coins[ticker] = coinInfo
+				Storage.LastUpdates[ticker] = t
+			}
+		}
+	} else {
+		// No coin, need to fetch.
+		if coinInfo, err := fetchCMCTicker(ticker); err != nil {
+			Storage.Coins = append(Storage.Coins, coinInfo)
+		}
+	}
+
+	return coinInfo, nil
+}
+
+// Check if the ticker is stale based on the passed timeout. Missing means stale.
+func tickerStale(lastUpdated time.Time, timeLimit int64) bool {
+	return time.Since(lastUpdated) > time.Duration(timeLimit)*time.Second
+}
+
 // Main loop to periodically download the status for all tickers.
 func (s *SlackListener) fetchData(period int, coinTickers []string) {
 	// Fetch coin data from CMC for all tickers

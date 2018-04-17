@@ -2,18 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/nlopes/slack"
 	"log"
 	"strings"
-
-	cmc "github.com/miguelmota/go-coinmarketcap"
-	"github.com/nlopes/slack"
 )
 
-type SlackListener struct {
-	client    *slack.Client
-	botID     string
-	channelID string
-}
+// Initialise the global storage of coins.
+var Storage = TickerStorage{}
 
 func (s *SlackListener) ListenAndResponse() {
 	rtm := s.client.NewRTM()
@@ -36,6 +31,7 @@ func (s *SlackListener) ListenAndResponse() {
 
 }
 
+// Generic message parser and delegator function.
 func (s *SlackListener) handleMessageEvent(ev *slack.MessageEvent) error {
 	// Do not react to itself.
 	if ev.User == s.botID {
@@ -74,35 +70,9 @@ func (s *SlackListener) handleMessageEvent(ev *slack.MessageEvent) error {
 		tracker = "litecoin"
 	}
 
-	// Fetch coin data from CMC
-	coinInfo, err := cmc.GetCoinData(tracker)
-	if err != nil {
-		fmt.Errorf("coin data retrieval failed: %v", err)
+	if err := s.pushCoinInfo(tracker, ev.Channel); err != nil {
+		return fmt.Errorf("coin info push failed: %s", err)
 	}
 
-	attachment := slack.Attachment{
-		Text: "Showing data for " + coinInfo.ID,
-		Fields: []slack.AttachmentField{
-			slack.AttachmentField{
-				Title: "24h Change",
-				Value: fmt.Sprintf("%.2f%%", coinInfo.PercentChange24H),
-			},
-			slack.AttachmentField{
-				Title: "Current value",
-				Value: fmt.Sprintf("$%.2f", coinInfo.PriceUSD),
-			},
-		},
-		Color: areWeHappy(coinInfo.PercentChange1H),
-	}
-
-	params := slack.PostMessageParameters{
-		Attachments: []slack.Attachment{
-			attachment,
-		},
-	}
-
-	if _, _, err := s.client.PostMessage(ev.Channel, "", params); err != nil {
-		return fmt.Errorf("failed to post message: %s", err)
-	}
 	return nil
 }
