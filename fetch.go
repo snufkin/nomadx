@@ -9,21 +9,22 @@ import (
 
 // Fetch data for a particular ticker from CMC
 // Avoid invoking this directly as this pings the endpoint directly.
-func fetchCMCTicker(ticker string) (cmc.Coin, error) {
+func fetchCMCTicker(ticker string) (coinInfo Coin, err error) {
 	// Fetch coin data from CMC
-	coinInfo, err := cmc.GetCoinData(ticker)
+	cmcCoin, err := cmc.GetCoinData(ticker)
 	if err != nil {
-		fmt.Errorf("coin data retrieval failed: %v", err)
+		return Coin{}, fmt.Errorf("coin data retrieval failed: %v", err)
+	} else {
+		return Coin{cmcCoin, time.Now()}, nil
 	}
-	return coinInfo, err
 }
 
 // Ticker getter with caching wrapper (not less than 10 per minute)
-func getTicker(ticker string) (coinInfo cmc.Coin, err error) {
+func getTicker(ticker string) (coinInfo Coin, err error) {
 	t := time.Now()
 
 	// Do we even have the coin on record?
-	coinList, ok := []cmc.Coin{}, false
+	coinList, ok := []Coin{}, false
 
 	if coinList, ok = Storage.Coins[ticker]; ok {
 
