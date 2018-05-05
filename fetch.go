@@ -19,36 +19,38 @@ func fetchCMCTicker(ticker string) (cmc.Coin, error) {
 }
 
 // Ticker getter with caching wrapper (not less than 10 per minute)
-func getTicker(ticker string) (cmc.Coin, error) {
+func getTicker(ticker string) (coinInfo cmc.Coin, err error) {
 	t := time.Now()
 
-	// Do we even have the coin?
-	if coinInfo, ok := Storage.Coins[ticker]; ok {
+	// Do we even have the coin on record?
+	coinList, ok := []cmc.Coin{}, false
+
+	if coinList, ok = Storage.Coins[ticker]; ok {
 
 		// We have the coin, and it is not stale.
-		if !tickerStale(Storage.LastUpdates[ticker], 6) {
-			coinInfo = Storage.Coins[ticker]
+		if !isTickerStale(Storage.LastUpdates[ticker], 6) {
+			coinInfo = coinList[len(coinList)-1] // Last element of the entries.
 		} else {
 			// Stale coin, update storage.
-			if coinInfo, err := fetchCMCTicker(ticker); err != nil {
+			if coinInfo, err = fetchCMCTicker(ticker); err != nil {
 				fmt.Errorf("ticker failed to refresh: %v", err)
 			} else {
-				Storage.Coins[ticker] = coinInfo
+				Storage.Coins[ticker] = append(Storage.Coins[ticker], coinInfo)
 				Storage.LastUpdates[ticker] = t
 			}
 		}
 	} else {
 		// No coin, need to fetch.
-		if coinInfo, err := fetchCMCTicker(ticker); err != nil {
-			Storage.Coins = append(Storage.Coins, coinInfo)
+		if coinInfo, err = fetchCMCTicker(ticker); err != nil {
+			Storage.Coins[ticker] = append(Storage.Coins[ticker], coinInfo)
 		}
 	}
 
-	return coinInfo, nil
+	return
 }
 
 // Check if the ticker is stale based on the passed timeout. Missing means stale.
-func tickerStale(lastUpdated time.Time, timeLimit int64) bool {
+func isTickerStale(lastUpdated time.Time, timeLimit int64) bool {
 	return time.Since(lastUpdated) > time.Duration(timeLimit)*time.Second
 }
 

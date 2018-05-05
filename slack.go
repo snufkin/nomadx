@@ -12,7 +12,7 @@ type SlackListener struct {
 	channelID string
 }
 
-// Fetch coin data from CMC and push it to slack.
+// Push coin data to slack.
 func (s *SlackListener) pushCoinInfo(ticker string, channel string) error {
 
 	// Grab the latest coin data from storage.
@@ -26,14 +26,14 @@ func (s *SlackListener) pushCoinInfo(ticker string, channel string) error {
 		Fields: []slack.AttachmentField{
 			slack.AttachmentField{
 				Title: "24h Change",
-				Value: fmt.Sprintf("%.2f%%", coinInfo.PercentChange24h),
+				Value: fmt.Sprintf("%.2f%%", coinInfo.PercentChange24H),
 			},
 			slack.AttachmentField{
 				Title: "Current value",
-				Value: fmt.Sprintf("$%.2f", coinInfo.PriceUsd),
+				Value: fmt.Sprintf("$%.2f", coinInfo.PriceUSD),
 			},
 		},
-		Color: areWeHappy(coinInfo.PercentChange1h),
+		Color: areWeHappy(coinInfo.PercentChange1H),
 	}
 
 	params := slack.PostMessageParameters{
