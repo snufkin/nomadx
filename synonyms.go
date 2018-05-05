@@ -7,6 +7,7 @@ import (
 var currencyNames = map[string]string{
 	"ethereum": "eth",
 	"eth":      "eth",
+	"ether":    "eth",
 	"litecoin": "ltc",
 	"ltc":      "ltc",
 	"bitcoin":  "btc",

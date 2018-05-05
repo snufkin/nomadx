@@ -44,33 +44,12 @@ func (s *SlackListener) handleMessageEvent(ev *slack.MessageEvent) error {
 	// Parse message
 	m := strings.Split(strings.TrimSpace(ev.Msg.Text), " ")[1:]
 
-	// Allowed commands (coins)
-	commands := []string{"eth", "ether", "ethereum", "btc", "bitcoin", "ltc", "litecoin"}
-
-	ack := false
-	for _, cmd := range commands {
-		if m[0] == cmd {
-			ack = true
-			break
-		}
+	syn, err := getTickerSynonym(m[0])
+	if err {
+		return err
 	}
 
-	if !ack {
-		return fmt.Errorf("invalid message")
-	}
-
-	var tracker string
-	if m[0] == "eth" || m[0] == "ether" || m[0] == "ethereum" {
-		tracker = "ethereum"
-	}
-	if m[0] == "btc" || m[0] == "bitcoin" {
-		tracker = "bitcoin"
-	}
-	if m[0] == "ltc" || m[0] == "litecoin" {
-		tracker = "litecoin"
-	}
-
-	if err := s.pushCoinInfo(tracker, ev.Channel); err != nil {
+	if err := s.pushCoinInfo(syn, ev.Channel); err != nil {
 		return fmt.Errorf("coin info push failed: %s", err)
 	}
 
